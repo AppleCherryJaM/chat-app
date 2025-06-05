@@ -21,6 +21,10 @@ module.exports = class ApiError extends Error {
 		return new ApiError(404, `Cannot find ${param.model} with current ${param.name}: ${param.value}.`);
 	}
 
+	static SearchError(message) {
+		return new ApiError(404, message);
+	}
+
 	static UniquenessError({model, field, value}) {
 		return new ApiError(409, `Model ${model} with ${field}: ${value} already exists`);
 	}

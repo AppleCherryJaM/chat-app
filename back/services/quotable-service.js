@@ -1,16 +1,11 @@
 const axios = require("axios");
 const https = require("https");
-// const ApiError = require("../exceptions/api-error");
 
 const API_URL = process.env.QUOTABLE_API;
 
-// const apiServer = axios.create({
-// 	baseURL: API_URL,
-// 	headers: {
-// 		'content-type': "application/json"
-// 	},
-// 	credentials: true
-// });
+const httpsAgent = new https.Agent({
+	rejectUnauthorized: false,
+});
 
 const searchAuthor = async (query) => {
 	const author = await axios.get(`${API_URL}/search/authors?query=${query}`); //returning array
@@ -23,7 +18,9 @@ const getRandomQuote = async () => {
 }
 
 const getAuthorsList = async () => {
-	const result = await axios.get(`${API_URL}/authors?sortBy=name`).results;
+	let result;
+	const response = await axios.get(`${API_URL}/authors?sortBy=name`, { httpsAgent });
+	result = response.data.results;
 	return result;
 }
 

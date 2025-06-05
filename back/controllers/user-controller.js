@@ -10,73 +10,80 @@ const { getAuthorsList } = require("../services/quotable-service");
 const { getRandomInt } = require("../utils/utils");
 
 class UserController {
-	async signup(req, res, next) {
-		const {firstName, lastName, email, password} = req.body;
-		//const image = req.file.image;
+	async registration(req, res, next) {
+		const {name, lastName, email, password} = req.body;
+		const image = req.files.image || null;
 		let newUser, userChats;
 
-		//const errors = validationResult(req);
+		let file, candidate;
+		try {
+			candidate = await userSchema.findOne({email: email});
+		} catch (error) {
+			console.log(`Error in user-controller. Error: ${error}`)
+			return next(error);
+		}
 
-		// let file;
-		// try {
-		// 	const candidate = userSchema.findOne({email: email, firstName: firstName, lastName: lastName});
-		// 	// console.log("Candidate: ", candidate);
-		// 	// if (candidate) {
-		// 	// 	throw ApiError.UniquenessError({model: "User", field: "email", name: email})
-		// 	// }
-		// 	// if (!errors.isEmpty()) {
-		// 	// 	return next();
-		// 	// }
-
-		// } catch (error) {
-		// 	console.log(`Error in user-controller. Error: ${error}`)
-		// 	return next(error);
-		// }
+		if (candidate) {
+			return next(ApiError.UniquenessError({ model: "User", field: "email", name: email }));
+		}
 
 		// saving users avatar picture path here
-		// if (image) {
-		// 	image.filename = uuid.v4() + ".jpg";
-		// 	file = image.filename;
-		// 	image.mv(path.resolve(
-		// 		__dirname, "..", 'static', file
-		// 	));
-		// }
+		if (image) {
+			image.filename = uuid.v4() + ".jpg";
+			file = image.filename;
+			image.mv(path.resolve(
+				__dirname, "..", 'static', file
+			));
+		}
+
+		const hashPassword = await bcrypt.hash(password, 3);
+
+		newUser = new userSchema({
+			firstName: name,
+			lastName,
+			email,
+			avatar: file,
+			password: hashPassword
+		});	
 
 		try {
 			const authors = await getAuthorsList();
 
-			if (authors.isEmpty()) {
-				throw ApiError.BadAPIRequest("Cannot get authors from API")
+			console.log("Authors: ", authors);
+
+			if (!authors && authors.length < 0) {
+				return next(ApiError.BadAPIRequest("Cannot get authors from API"));
 			}
 
-			const indexes = [getRandomInt(0, 10), getRandomInt(10, 20), getRandomInt(20,30)];
+			const indexes = [getRandomInt(0, 20), getRandomInt(0, 20), getRandomInt(0,20)];
 			userChats = [
 				new chatSchema({
 					user: newUser._id,
 					firstName: authors[indexes[0]].name.split(" ")[0],
 					lastName: authors[indexes[0]].name.split(" ")[1],
-					constantName: authors[indexes[0]].slug
+					constantName: authors[indexes[0]].slug,
+					avatar: "default-chat-picture1.jpg"
 				}),
 				new chatSchema({
 					user: newUser._id,
 					firstName: authors[indexes[1]].name.split(" ")[0],
 					lastName: authors[indexes[1]].name.split(" ")[1],
-					constantName: authors[indexes[1]].slug
+					constantName: authors[indexes[1]].slug,
+					avatar: "default-chat-picture1.jpg"
 				}),
 				new chatSchema({
 					user: newUser._id,
 					firstName: authors[indexes[2]].name.split(" ")[0],
 					lastName: authors[indexes[2]].name.split(" ")[1],
-					constantName: authors[indexes[2]].slug
+					constantName: authors[indexes[2]].slug,
+					avatar: "default-chat-picture1.jpg"
 				})
 			];
-			await insertMany();
+			await chatSchema.insertMany(userChats);
 		} catch (error) {
 			console.log(error);
 			return next(error);
 		}
-
-		const hashPassword = await bcrypt.hash(password, 3);
 
 		let chatIds = [];
 		userChats.forEach((chat) => {
@@ -84,13 +91,7 @@ class UserController {
 		});
 
 		try {
-			newUser = new userSchema({
-				firstName,
-				lastName,
-				email,
-				password: hashPassword,
-				chats: chatIds
-			});	
+			newUser.chats = chatIds;
 			await newUser.save();
 		} catch (error) {
 			console.log(error);
@@ -105,14 +106,14 @@ class UserController {
 		try {
 			user = await userSchema.find({email});
 			if (!user) {
-				throw ApiError.SearchError({ model: "User", name: "email", value: email});
+				return next(ApiError.SearchError({ model: "User", name: "email", value: email }));
 			}
 
 			const isValidPassword = bcrypt.compareSync(password, user.password);
 			if (!isValidPassword) {
-				throw new ApiError(
+				return next(new ApiError(
 					400, `Invalid password`
-				);
+				));
 			}
 
 		} catch (error) {
@@ -137,6 +138,26 @@ class UserController {
 			console.log(error);
 			return next(error);
 		}
+	}
+
+	async testMethod(req, res, next) {
+		try {
+			const result = await getAuthorsList();
+			return res.json({result});
+		} catch (error) {
+			console.log(error);
+			return next(error);
+		}
+	}
+
+	async getUsers(req, res, next){
+		let users;
+		try {
+			users = await userSchema.find();
+		} catch (error) {
+			return next(error);
+		}
+		return res.status(200).json({result: users});
 	}
 }
 

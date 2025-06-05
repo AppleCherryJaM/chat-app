@@ -7,7 +7,7 @@ const chatSchema = new Schema({
 	firstName: { type: String },
 	lastName: { type: String },
 	constantName: {type: String, required: true, unique: true},
-	// avatar: {type: String, required: true},
+	avatar: {type: String, required: true},
 	messages: [{ type: mongoose.Types.ObjectId, ref: "Message" }]
 });
 

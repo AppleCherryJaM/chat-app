@@ -63,6 +63,7 @@ const App = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({email, password})
     });
+    console.log(response);
     const data = await response.json();
     setCurrentUser(data.result);
     setUserChats(data.result.chats);

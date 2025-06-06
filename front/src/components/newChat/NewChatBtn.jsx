@@ -1,4 +1,4 @@
-import { useModal } from '../Modal/ModalContext';
+import { useModal } from '../modal/ModalContext';
 
 const NewChatBtn = () => {
   const { openModal } = useModal();

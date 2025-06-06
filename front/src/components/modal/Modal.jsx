@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState } from 'react';
 import { useModal } from './ModalContext';
-// import { socket } from '../../socket';
 
 const Modal = ({ chat, createChat, editChat, deleteChat }) => {
   const { closeModal, options } = useModal();

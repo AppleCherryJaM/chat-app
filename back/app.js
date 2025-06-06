@@ -8,6 +8,7 @@ const cors = require('cors');
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
 const bodyParser = require("body-parser");
+const path = require("path");
 
 const { Server } = require("socket.io");
 
@@ -27,6 +28,11 @@ app.use(express.static(__dirname + 'static'));
 app.use(fileUpload({}));
 app.use(cookieParser());
 app.use(cors());
+app.use(express.static(path.join(__dirname, '../front/dist')));
+
+app.get('*', (req, res) => {
+	res.sendFile(path.join(__dirname, '../front/dist', 'index.html'));
+});
 
 app.use("/api", mainRouter);
 

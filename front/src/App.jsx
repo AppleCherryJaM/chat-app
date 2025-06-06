@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 
-import { Chat } from './components/chat/chat';
+import { Chat } from './components/chat/Chat';
 import { Modal } from './components/modal/Modal';
 import { useModal } from './components/modal/ModalContext';
-import { SideBar } from './components/sideBar/sideBar';
+import { SideBar } from './components/sideBar/SideBar';
 import LoginPage from './components/login/LoginPage';
 
 import { socket } from './socket';
@@ -19,8 +19,6 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentChat, setCurrentChat] = useState();
   const [searchQuery, setSearchQuery] = useState("");
-  // const [chatName, setChatName] = useState('');
-  // const [message, setMessage] = useState('');
 
   const { isOpen, closeModal } = useModal();
 
@@ -44,14 +42,6 @@ const App = () => {
     socket.on('error', (message) => {
       toast.error('Error ' + message);
     });
-
-    // socket.on('api_response', (newMessage) => {
-    //   if (newMessage.type === "received") {
-    //     showToast(`${newMessage.firstName} ${newMessage.lastName}`, newMessage.messageText)
-    //     // setChatName(`${newMessage.firstName} ${newMessage.lastName}`);
-    //     // setMessage(newMessage.messageText)
-    //   }
-    // });
 
   }, []);
 

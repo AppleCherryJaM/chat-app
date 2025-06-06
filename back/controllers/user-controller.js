@@ -132,7 +132,7 @@ class UserController {
 	}
 
 	async deleteUser(req, res, next) {
-		const {userId} = req.params;
+		const userId = req.params.userId;
 		let deletedUser;
 		try {
 			deletedUser = await userSchema.deleteOne({_id: userId});

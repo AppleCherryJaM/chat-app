@@ -9,6 +9,3 @@ router.use("/chat", chatRouter);
 router.use("/user", userRouter);
 
 module.exports = router;
-
-
-

@@ -1,12 +1,15 @@
 // import { Chat, Modal, SideBar, useModal } from './components/components';
+import { useEffect, useState } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+
 import { Chat } from './components/chat/chat';
 import { Modal } from './components/modal/Modal';
 import { useModal } from './components/modal/ModalContext';
 import { SideBar } from './components/sideBar/sideBar';
-import { useEffect, useState } from 'react';
+import LoginPage from './components/login/LoginPage';
+
 import { socket } from './socket';
 
-import LoginPage from './components/login/LoginPage';
 
 const URL = import.meta.env.VITE_BE_URL;
 
@@ -16,12 +19,14 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentChat, setCurrentChat] = useState();
   const [searchQuery, setSearchQuery] = useState("");
+  // const [chatName, setChatName] = useState('');
+  // const [message, setMessage] = useState('');
 
   const { isOpen, closeModal } = useModal();
 
   useEffect(() => {
     socket.on('update_chat', (updatedChat) => {
-      //toast.success('Chat edited');
+      toast.success('Chat edited');
       setCurrentUser((prevUser) => {
         const updatedChats = prevUser.chats.map((chat) =>
           chat._id === updatedChat._id ? updatedChat : chat,
@@ -35,6 +40,19 @@ const App = () => {
         (prev) => (prev._id === updatedChat._id ? updatedChat : prev));
       closeModal();
     });
+
+    socket.on('error', (message) => {
+      toast.error('Error ' + message);
+    });
+
+    // socket.on('api_response', (newMessage) => {
+    //   if (newMessage.type === "received") {
+    //     showToast(`${newMessage.firstName} ${newMessage.lastName}`, newMessage.messageText)
+    //     // setChatName(`${newMessage.firstName} ${newMessage.lastName}`);
+    //     // setMessage(newMessage.messageText)
+    //   }
+    // });
+
   }, []);
 
   const registration = async ({firstName, lastName, email, password}) => {
@@ -133,6 +151,7 @@ const App = () => {
                <Chat userId={currentUser.id} chat={currentChat} /> </>}
       {isOpen && <Modal chat={currentChat} createChat={createChat} editChat={editChat} deleteChat={deleteChat}/>}
     </>}
+    <ToastContainer/>
     </>
   );
 }

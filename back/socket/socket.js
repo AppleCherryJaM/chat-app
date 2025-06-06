@@ -91,10 +91,15 @@ module.exports = function (io) {
 					id: autoMessage._id,
 					chatId: chat._id,
 					messageText: autoMessage.messageText,
-					timestamp: autoMessage.timestamp
+					timestamp: autoMessage.timestamp,
+					type: "received"
 				};
 
-				io.emit('new_message', autoResponse);
+				socket.emit('api_response', { 
+					firstName: updatedChat.firstName, 
+					lastName: updatedChat.lastName, 
+					message: autoMessage.messageText
+				});
 				updatedChat.messages.push(autoResponse);
 				socket.emit('update_chat', updatedChat)
 			}, 3000);

@@ -58,6 +58,7 @@ body {
 	border-radius: 15px;
 	cursor: pointer;
 	min-width: 65px;
+	max-width: 80px;
 	text-align: center;
 }
 

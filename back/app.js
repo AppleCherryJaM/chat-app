@@ -28,13 +28,13 @@ app.use(express.static(__dirname + 'static'));
 app.use(fileUpload({}));
 app.use(cookieParser());
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../front/dist')));
+// app.use(express.static(path.join(__dirname, '../front/dist')));
 
 app.use("/api", mainRouter);
 
-app.get('*', (req, res) => {
-	res.sendFile(path.join(__dirname, '../front/dist', 'index.html'));
-});
+// app.get('*', (req, res) => {
+// 	res.sendFile(path.join(__dirname, '../front/dist', 'index.html'));
+// });
 
 const server = http.createServer(app);
 

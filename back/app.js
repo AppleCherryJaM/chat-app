@@ -16,7 +16,7 @@ const mainRouter = require("./routers/main-router");
 const handler = require('./socket/socket');
 
 const PORT = process.env.PORT || 5000;
-const IO_PORT =process.env.IO_PORT;
+const IO_PORT = process.env.IO_PORT;
 const DB_URL = process.env.DB_URL;
 
 const app = express();
@@ -28,7 +28,7 @@ app.use(express.static(__dirname + 'static'));
 app.use(fileUpload({}));
 app.use(cookieParser());
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../front/dist')));
+// app.use(express.static(path.join(__dirname, '../front/dist')));
 
 app.use("/api", mainRouter);
 

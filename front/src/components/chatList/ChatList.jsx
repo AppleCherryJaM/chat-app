@@ -5,7 +5,7 @@ const ChatList = ({ chats, handleChange }) => {
   return <>
     <div className="chat-label">Chats</div>
     <div className="chat-list">
-      {chats && <>{chats.map((chat) => <ListItem chat={chat} key={chat.id}
+      {chats && <>{chats.map((chat) => <ListItem chat={chat} key={chat._id}
         handleChange={handleChange}/>)}</>}
       <NewChatBtn/>
     </div>

@@ -2,6 +2,9 @@ const userSchema = require("../models/user");
 const chatSchema = require("../models/chat");
 const messageSchema = require("../models/message");
 
+const axios = require("axios");
+const https = require("https");
+
 const ApiError = require("../models/api-error");
 const { getAuthorsList, getRandomQuote } = require("../services/quotable-service");
 
@@ -19,7 +22,7 @@ module.exports = function (io) {
 			}
 		});
 
-		socket.on("chat_update", async ({ firstName, lastName, chatId }) => {
+		socket.on("update_chat", async ({ firstName, lastName, chatId }) => {
 			let updatedChat;
 			try {
 				updatedChat = chatSchema.findById(chatId);
@@ -45,7 +48,7 @@ module.exports = function (io) {
 				console.log(error);
 			}
 			const newMessage = new messageSchema({
-				messageText: text, chat: chatId, user: userId
+				messageText: text, chat: chatId, user: userId, type: 'sent'
 			});
 
 			try {
@@ -54,20 +57,47 @@ module.exports = function (io) {
 				console.log(error);
 			}
 
-			let apiResponse, apiMessage;
+			const newChat = await chatSchema.findByIdAndUpdate(chat._id, {
+				$push: { messages: newMessage._id },
+			}).populate('messages');
 
-			try {
-				apiResponse = await getRandomQuote().content;
-				apiMessage = new messageSchema({
-					messageText: apiResponse,
-					chat: chatId
+			newChat.messages.push(newMessage);
+			socket.emit('update_chat', newChat);
+
+			setTimeout(async () => {
+				const httpsAgent = new https.Agent({
+					rejectUnauthorized: false,
 				});
-				await apiMessage.save();
-			} catch (error) {
-				console.log(error);
-			}
 
-			socket.emit('api_response', apiMessage);
+				const quoteRes = await axios.get('https://api.quotable.io/random', {
+					httpsAgent,
+				});
+				const quote = quoteRes.data.content;
+				console.log(quote);
+
+				const autoMessage = await messageSchema.create({
+					chat: chat._id,
+					messageText: quote,
+					type: 'received'
+				});
+
+				const updatedChat = await chatSchema.findByIdAndUpdate(chat._id, {
+					$push: { messages: autoMessage._id },
+				}).populate('messages');
+				
+				console.log("UpdatedChat: ", updatedChat);
+
+				const autoResponse = {
+					id: autoMessage._id,
+					chatId: chat._id,
+					messageText: autoMessage.messageText,
+					timestamp: autoMessage.timestamp
+				};
+
+				io.emit('new_message', autoResponse);
+				updatedChat.messages.push(autoResponse);
+				socket.emit('update_chat', updatedChat)
+			}, 3000);
 
 		});
 

@@ -10,14 +10,12 @@ router.post("/registration",
 	body("password").isLength({min: 4, max: 16}),
 	userController.registration);
 
-router.get("/signin", 
+router.post("/signin", 
 	body("email").isEmail(),
 	body("password").isLength({ min: 4, max: 16 }), 
 	userController.signin);
 
 router.delete("/delete/:uid", userController.deleteUser);
-
-router.();
 
 router.get("/all", userController.getUsers)
 

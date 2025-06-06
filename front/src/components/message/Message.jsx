@@ -1,24 +1,24 @@
 import { formatDate } from "../../utils";
 
-const Message = ({ content, createdAt, edited, option }) => {
+const Message = ({ messageText, timestamp, edited, option }) => {
 
   switch (option) {
 
-    case 'outgoing' :
+    case 'sent' :
       return <div className="message sent">
-        <div>{content}</div>
+        <div>{messageText}</div>
         <div className="meta-msg">
           {edited && <div className="edited-msg">edited</div>}
-          <div className="time-msg">{formatDate(createdAt, 'chat')}</div>
+          <div className="time-msg">{formatDate(timestamp, 'chat')}</div>
         </div>
       </div>;
 
-    case 'incoming' :
+    case 'received' :
       return <div className="message received">
-        <div>{content}</div>
+        <div>{messageText}</div>
         <div className="meta-msg">
           {edited && <div className="message-edited">edited</div>}
-          <div className="time-msg">{formatDate(createdAt, 'chat')}</div>
+          <div className="time-msg">{formatDate(timestamp, 'chat')}</div>
         </div>
       </div>;
 

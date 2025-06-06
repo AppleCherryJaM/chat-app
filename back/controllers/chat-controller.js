@@ -7,15 +7,12 @@ const userSchema = require("../models/user");
 const messageSchema = require("../models/message");
 const ApiError = require("../models/api-error");
 
-const { getRandomInt } = require("../utils/utils");
-
 class ChatController {
 	async createChat(req, res, next) {
 		const {firstName, lastName, userId} = req.body;
 		const errors = validationResult(req);
-		let authors, constantName, newChat, user;
+		let newChat, user;
 
-		// проверка на наличие юзера
 		try {
 			user = await userSchema.findById(userId);
 
@@ -32,7 +29,6 @@ class ChatController {
 			return next(error)
 		}
 
-		// поиск автора по введённым пользователем имени/фамилии
 		try {
 			let query;
 			if (!errors.isEmpty()) {
@@ -42,24 +38,14 @@ class ChatController {
 			if (firstName) query = firstName;
 			if (lastName) query += ` ${lastName}`;
 
-			authors = await searchAuthor(query).results;
-			constantName = authors[getRandomInt(0, 100)].slug;
 		} catch (error) {
 			return next(error);
 		}
 
-		// создание нового чата
 		try {
 			newChat = new chatSchema({
-				user: userId, firstName, lastName, constantName
+				user: userId, firstName, lastName
 			})
-
-			let isChatExists = false;
-			user.chats.forEach((constantName) => isChatExists = constantName === newChat.constantName); // проверка на существование чата
-			
-			if (isChatExists) {
-				throw ApiError.UniquenessError({ model: "ChatSchema", field: "constantName", value: constantName });
-			}
 		} catch (error) {
 			console.log(error);
 			return next(error); 
@@ -80,7 +66,8 @@ class ChatController {
 	}
 
 	async searchChat(req, res, next) {
-		const {userId, searchQuery} = req.params;
+		const {userId, searchQuery} = req.body;
+		console.log("Search: ", searchQuery);
 		let user, searchResults;
 		try {
 			user = await userSchema.findById(userId);
@@ -96,16 +83,9 @@ class ChatController {
 				$or: [
 					{firstName: {$regex: searchQuery, $options: "i"}},
 					{lastName: {$regex: searchQuery, $options: "i"}},
-					{constantName: {$regex: searchQuery, $options: "i"}}
 				]
-			});
-
-			// if (!searchResults.isEmpty()) {
-			// 	res.json({ results: searchResults.toObject({ getters: true }) });
-			// } else {
-			// 	res.json()
-			// }
-			return res.status(200).json({ results: searchResults.toObject({ getters: true }) });
+			}).populate('messages');
+			return res.status(200).json({ results: searchResults});
 
 		} catch (error) {
 			console.log(error);
@@ -113,8 +93,20 @@ class ChatController {
 		}
 	}
 
+	async getChatHistory(req, res, next) {
+		const chatId = req.params.chatId;
+		let messages = [];
+		try {
+			messages = await messageSchema.find({chat: chatId});
+		} catch (error) {
+			return next(error);
+		}
+
+		return res.status(200).json({result: messages});
+	}
+
 	async getUserChats(req, res, next) {
-		const { userId } = req.params.uid;
+		const userId = req.params.userId;
 		let user;
 		try {
 			user = await userSchema.findById(userId);
@@ -131,7 +123,8 @@ class ChatController {
 
 		let userChats;
 		try {
-			userChats = await chatSchema.select('_id name constantName messages').where('_id').in(user.chats).exec();
+			userChats = await chatSchema.find({ _id: { $in: user.chats } }).populate('messages');
+			//userChats = await chatSchema.select('_id name messages').where('_id').in(user.chats).exec();
 		} catch (error) {
 			console.log(error);
 			return next(error);
@@ -142,19 +135,15 @@ class ChatController {
 
 	async updateChat(req, res, next) {
 		const { firstName, lastName } = req.body;
-		const chatId = req.params.cid;
+		console.log(req.params);
+		const chatId = req.params.chatId;
 
 		let updatedChat;
-		try {
-			updatedChat = await chatSchema.findById(chatId);
-		} catch (error) {
-			console.log(error);
-			return next(error);
-		}
+		updatedChat = await chatSchema.findById(chatId);
 
 		if (!updatedChat) {
 			return next(
-				ApiError.searchError({ model: 'chat', name: 'id', value: chatId })
+				ApiError.SearchError({ model: 'chat', name: 'id', value: chatId })
 			);
 		}
 
@@ -171,7 +160,7 @@ class ChatController {
 	}
 
 	async clearChat(req, res, next) {
-		const chatId = req.params.cid;
+		const chatId = req.params.chatId;
 		let chat;
 		try {
 			chat = await chatSchema.findById(chatId);
@@ -196,45 +185,20 @@ class ChatController {
 	}
 
 	async deleteChat(req, res, next) {
-		const {chatId} = req.params.cid
-		let chat, user;
-		try {
-			chat = await chatSchema.findById(chatId);
-			if (!chat) {
-				return next(
-					ApiError.SearchError({ model: 'chat', name: 'id', value: chatId })
-				)
-			}
-		} catch (error) {
-			console.log(error);
-			return next(error);
-		}
+		const chatId = req.params.chatId;
+		const chat = await chatSchema.findById(chatId);
 
-		try {
-			user = userSchema.findById(chat.user);
-			if (!user) {
-				throw ApiError.SearchError({model: "User", name: "id", value: chat.user});
-			}
-		} catch (error) {
-			console.log(error);
-			return next(error);
-		}
+		console.log("Chat: ", chat);
+		const user = await userSchema.findById(chat.user);
 
-		try {
-			const session = mongoose.startSession();
-			session.startTransaction();
-			await messageSchema.deleteMany({ chat: chatId });
-			await chat.deleteOne({ session: session });
+		
+		await messageSchema.deleteMany({ chat: chatId });
+		await chat.deleteOne();
 
-			const index = user.chats.indexOf(chat._id);
-			user.chats.splice(index, 1);
+		const index = user.chats.indexOf(chat._id);
+		user.chats.splice(index, 1);
 
-			await chat.user.save({ session });
-			await session.commitTransaction();
-		} catch (error) {
-			console.log(error);
-			return next(error);
-		}
+		await user.save();
 
 		return res.status(200).json({ message: "Chat has been deleted" });
 	}

@@ -8,13 +8,12 @@ const httpsAgent = new https.Agent({
 });
 
 const searchAuthor = async (query) => {
-	const author = await axios.get(`${API_URL}/search/authors?query=${query}`); //returning array
+	const author = await axios.get(`${API_URL}/search/authors?query=${query}`, { httpsAgent }); //returning array
 	return author;
 }
 
 const getRandomQuote = async () => {
-	const result = await axios.get(`${API_URL}/quotes/random`);
-	return result;
+	return await axios.get(`https://api.quotable.io/quotes/random`, { httpsAgent });
 }
 
 const getAuthorsList = async () => {
@@ -25,7 +24,7 @@ const getAuthorsList = async () => {
 }
 
 const searchAuthorsQuotes = async (query) => {
-	const result = await axios.get(`${API_URL}/search/quotes?query=${query}&fields=author`);
+	const result = await axios.get(`${API_URL}/search/quotes?query=${query}&fields=author`, { httpsAgent });
 	return result;
 }
 

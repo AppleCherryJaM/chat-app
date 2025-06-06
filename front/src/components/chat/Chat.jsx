@@ -1,17 +1,22 @@
 import { ChatBody } from "./body/ChatBody";
 import { Footer } from "./footer/Footer";
-import { Header } from "./header/Header";
+import { ChatHeader } from "./header/ChatHeader";
+import { socket } from "../../socket";
 
 const Chat = ({ chat, userId }) => {
+  console.log(chat);
+  const handleMsg = (messageText) => {
+    if (!chat) return;
+    socket.emit('message_send', {userId, chatId: chat._id, text: messageText});
+  } 
   return <>
     <div className="right-panel">
       {chat && <>
-        <Header chat={chat}/>
+        <ChatHeader chat={chat}/>
         <ChatBody messages={chat.messages} userId={userId}/>
-        <Footer/>
+        <Footer onSubmit={handleMsg}/>
       </>
       }
-      {!chat && <div>Create chat</div>}
     </div>
 
   </>;

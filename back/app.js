@@ -15,6 +15,7 @@ const mainRouter = require("./routers/main-router");
 const handler = require('./socket/socket');
 
 const PORT = process.env.PORT || 5000;
+const IO_PORT =process.env.IO_PORT;
 const DB_URL = process.env.DB_URL;
 
 const app = express();
@@ -40,7 +41,7 @@ handler(io);
 const start = async () => {
 	try {
 		await mongoose.connect(DB_URL);
-		io.listen(PORT);
+		io.listen(IO_PORT);
 		server.listen(PORT, () => {
 			console.log("Server started");
 		});

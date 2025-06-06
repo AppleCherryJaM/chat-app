@@ -1,7 +1,5 @@
-// import { io } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
-// // const URL = process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:5000';
+const IO_URL = import.meta.env.VITE_BE_IO_URL;
 
-// const URL = 'http://localhost:5000';
-
-// export const socket = io(URL);
+export const socket = io(IO_URL);

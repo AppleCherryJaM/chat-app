@@ -11,8 +11,9 @@ const { getRandomInt } = require("../utils/utils");
 
 class UserController {
 	async registration(req, res, next) {
-		const {name, lastName, email, password} = req.body;
-		const image = req.files.image || null;
+		const {firstName, lastName, email, password} = req.body;
+		console.log(req.body);
+		const image = req.files ? req.files.image : undefined;
 		let newUser, userChats;
 
 		let file, candidate;
@@ -39,7 +40,7 @@ class UserController {
 		const hashPassword = await bcrypt.hash(password, 3);
 
 		newUser = new userSchema({
-			firstName: name,
+			firstName: firstName,
 			lastName,
 			email,
 			avatar: file,
@@ -48,8 +49,6 @@ class UserController {
 
 		try {
 			const authors = await getAuthorsList();
-
-			console.log("Authors: ", authors);
 
 			if (!authors && authors.length < 0) {
 				return next(ApiError.BadAPIRequest("Cannot get authors from API"));
@@ -61,21 +60,18 @@ class UserController {
 					user: newUser._id,
 					firstName: authors[indexes[0]].name.split(" ")[0],
 					lastName: authors[indexes[0]].name.split(" ")[1],
-					constantName: authors[indexes[0]].slug,
 					avatar: "default-chat-picture1.jpg"
 				}),
 				new chatSchema({
 					user: newUser._id,
 					firstName: authors[indexes[1]].name.split(" ")[0],
 					lastName: authors[indexes[1]].name.split(" ")[1],
-					constantName: authors[indexes[1]].slug,
 					avatar: "default-chat-picture1.jpg"
 				}),
 				new chatSchema({
 					user: newUser._id,
 					firstName: authors[indexes[2]].name.split(" ")[0],
 					lastName: authors[indexes[2]].name.split(" ")[1],
-					constantName: authors[indexes[2]].slug,
 					avatar: "default-chat-picture1.jpg"
 				})
 			];
@@ -97,19 +93,22 @@ class UserController {
 			console.log(error);
 			return next(error);
 		}
+		newUser.chats = userChats;
 		return res.status(201).json({ message: "User created", newUser });
 	}
 
 	async signin(req, res, next) {
 		const { email, password } = req.body;
+		console.log(email);
 		let user;
 		try {
-			user = await userSchema.find({email});
+			user = await userSchema.findOne({email});
 			if (!user) {
 				return next(ApiError.SearchError({ model: "User", name: "email", value: email }));
 			}
 
 			const isValidPassword = bcrypt.compareSync(password, user.password);
+			console.log(isValidPassword)
 			if (!isValidPassword) {
 				return next(new ApiError(
 					400, `Invalid password`
@@ -121,11 +120,15 @@ class UserController {
 			return next(error);
 		}
 
-		return res.status(200).json({result: user});
-	}
+		let chats;
+		try {
+			chats = await chatSchema.find({user: user._id}).populate('messages');
+		} catch (error) {
+			return next(error);
+		}
 
-	async logout(req, res, next) {
-
+		user.chats = chats;
+		res.status(200).json({result: user});
 	}
 
 	async deleteUser(req, res, next) {
